@@ -83,7 +83,7 @@ func (m MovieModel) Update(movie *Movie) error {
 	query := `
 		UPDATE movie
 		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
-		WHERE id = $5
+		WHERE id = $5 AND version = $6
 		RETURNING version
 	`
 
