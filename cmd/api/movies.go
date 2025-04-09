@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Ngn1n3/lets-go-further/internal/data"
 	"github.com/Ngn1n3/lets-go-further/internal/validator"
@@ -94,6 +95,13 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 			app.serverErrorResponse(w, r, err)
 		}
 		return
+	}
+
+	if r.Header.Get("x-Expected-Version") != "" {
+		if strconv.FormatInt(int64(movie.Version),32) != r.Header.Get("x-Expected-Version") {
+			app.editConflictResponse(w, r)
+			return
+		}
 	}
 
 	var input struct {
