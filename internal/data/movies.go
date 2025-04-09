@@ -71,7 +71,7 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrRecordNotFound
-		default: 
+		default:
 			return nil, err
 		}
 	}
@@ -87,9 +87,9 @@ func (m MovieModel) Update(movie *Movie) error {
 		RETURNING version
 	`
 
-	args := []interface{} {
+	args := []interface{}{
 		movie.Title,
-		movie.Year, 
+		movie.Year,
 		movie.Runtime,
 		pq.Array(movie.Genres),
 		movie.ID,
@@ -99,5 +99,28 @@ func (m MovieModel) Update(movie *Movie) error {
 }
 
 func (m MovieModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM movies WHERE id = $1
+	`
+
+	result, err := m.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
 	return nil
+
 }

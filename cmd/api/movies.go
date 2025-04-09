@@ -103,33 +103,57 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		Genres  []string     `json:"genres"`
 	}
 
-  // Pass the updated movie recored to our new update()method
-  err = app.readJSON(w, r, &input)
-  if err != nil {
-    app.badRequestResponse(w, r, err)
-    return
-  }
+	// Pass the updated movie recored to our new update()method
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-  movie.Title = input.Title
-  movie.Year = input.Year
-  movie.Runtime = input.Runtime
-  movie.Genres = input.Genres
+	movie.Title = input.Title
+	movie.Year = input.Year
+	movie.Runtime = input.Runtime
+	movie.Genres = input.Genres
 
-  v := validator.New()
+	v := validator.New()
 
-  if data.ValidateMovie(v, movie); !v.Valid() {
-    app.failedValidationResponse(w, r, v.Errors)
-    return
-  }
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
 
-  err = app.models.Movies.Update(movie)
-  if err != nil {
-    app.serverErrorResponse(w, r, err)
-    return
-  }
+	err = app.models.Movies.Update(movie)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
-  err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
-  if err != nil {
-    app.serverErrorResponse(w, r, err)
-  }
+	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Movies.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
