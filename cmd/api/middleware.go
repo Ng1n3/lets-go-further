@@ -24,31 +24,31 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
-  type client struct {
-    limiter *rate.Limiter
-    lastSeen time.Time
-  }
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
 
 	var (
 		mu      sync.Mutex
 		clients = make(map[string]*client)
 	)
 
-  // background goroutine to remove old entries from the clients map once every minute
-  go func() {
-    for {
-      time.Sleep(time.Minute)
+	// background goroutine to remove old entries from the clients map once every minute
+	go func() {
+		for {
+			time.Sleep(time.Minute)
 
-      mu.Lock()
-      for ip, client := range clients {
-        if time.Since(client.lastSeen) > 3*time.Minute {
-          delete(clients, ip)
-        }
-      }
+			mu.Lock()
+			for ip, client := range clients {
+				if time.Since(client.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
 
-      mu.Unlock()
-    }
-  }()
+			mu.Unlock()
+		}
+	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//extract ip from each client
@@ -61,8 +61,10 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		mu.Lock()
 
 		if _, found := clients[ip]; !found {
-			clients[ip] = &client{limiter: rate.NewLimiter(2, 4)}
+			clients[ip] = &client{limiter: rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)}
 		}
+
+    clients[ip].lastSeen = time.Now()
 
 		if !clients[ip].limiter.Allow() {
 			mu.Unlock()
