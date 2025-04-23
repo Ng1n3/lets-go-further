@@ -68,7 +68,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			clients[ip] = &client{limiter: rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)}
 		}
 
-    clients[ip].lastSeen = time.Now()
+		clients[ip].lastSeen = time.Now()
 
 		if !clients[ip].limiter.Allow() {
 			mu.Unlock()
@@ -122,6 +122,24 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		r = app.contextSetUser(r, user)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		if user.IsAnonymouse() {
+			app.authenticationRequiredResponse(w, r)
+			return
+		}
+
+		if !user.Activated {
+			app.inactiveAccountResponse(w, r)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
