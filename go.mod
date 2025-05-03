@@ -3,6 +3,7 @@ module github.com/Ngn1n3/lets-go-further
 go 1.23.2
 
 require (
+	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-mail/mail/v2 v2.3.0 // indirect
 	github.com/go-pg/pg/v10 v10.14.0 // indirect
 	github.com/go-pg/zerochecker v0.2.0 // indirect
