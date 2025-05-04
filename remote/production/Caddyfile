@@ -1,4 +1,8 @@
-http://173.230.128.152 {
+{
+  email code.with.muyiwa@gmail.com
+}
+
+https://173.230.128.152 {
   respond /debug/* "Not Permitted" 403
   reverse_proxy localhost:4000
 }
